@@ -1,0 +1,26 @@
+# Node
+node_modules/
+client/node_modules/
+server/node_modules/
+client/dist/
+client/build/
+npm-debug.log*
+
+# Environment variables
+.env
+server/.env
+ml-service/.env
+
+# Python
+ml-service/__pycache__/
+ml-service/*.pyc
+ml-service/venv/
+ml-service/.venv/
+*.pkl
+*.joblib
+
+# OS/editor
+.DS_Store
+.vscode/
+.idea/
+*.log
