@@ -74,6 +74,7 @@ exports.returnBook = async (req, res) => {
 };
 
 exports.getTransactions = async (req, res) => {
-  const transactions = await Transaction.find().populate("bookId memberId");
+  const filter = req.user.role === "member" ? { memberId: req.user.id } : {};
+  const transactions = await Transaction.find(filter).populate("bookId memberId");
   res.json(transactions);
 };
