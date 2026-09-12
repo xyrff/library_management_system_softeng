@@ -10,6 +10,14 @@ const bookSchema = new mongoose.Schema(
     totalCopies: { type: Number, required: true, default: 1 },
     availableCopies: { type: Number, required: true, default: 1 },
     shelfLocation: { type: String },
+    coverUrl: {
+      type: String,
+      default: function getCoverUrl() {
+        return this.isbn
+          ? `https://covers.openlibrary.org/b/isbn/${encodeURIComponent(this.isbn)}-L.jpg`
+          : undefined;
+      },
+    },
   },
   { timestamps: true }
 );

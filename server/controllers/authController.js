@@ -38,3 +38,9 @@ exports.login = async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 };
+
+exports.getCurrentUser = async (req, res) => {
+  const member = await Member.findById(req.user.id).select('name email role');
+  if (!member) return res.status(401).json({ message: "User not found" });
+  res.json(member);
+};
