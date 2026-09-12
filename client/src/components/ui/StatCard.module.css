@@ -1,0 +1,27 @@
+.card {
+  background: var(--color-surface);
+  border-radius: var(--radius-lg);
+  padding: 22px 24px;
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--color-border-light);
+  border-left: 4px solid transparent;
+}
+.primary { border-left-color: var(--color-primary); }
+.danger  { border-left-color: var(--color-danger);  }
+.warning { border-left-color: #f59e0b;              }
+.info    { border-left-color: #3b82f6;              }
+
+.top   { display: flex; align-items: center; justify-content: space-between; }
+.info  { display: flex; flex-direction: column; gap: 4px; }
+
+.label { font-size: 13px; color: var(--color-text-secondary); font-weight: 500; }
+.value { font-size: 32px; font-weight: 800; color: var(--color-text); line-height: 1; }
+.trend { font-size: 12px; color: var(--color-text-muted); margin-top: 2px; }
+
+.iconBox {
+  width: 48px; height: 48px;
+  border-radius: var(--radius-md);
+  background: var(--color-bg);
+  display: flex; align-items: center; justify-content: center;
+  color: var(--color-text-secondary);
+}

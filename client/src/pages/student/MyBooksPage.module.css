@@ -1,0 +1,41 @@
+.page { padding: 36px 40px; }
+
+.tableWrap {
+  background: var(--color-surface);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--color-border-light);
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+}
+.table {
+  width: 100%; border-collapse: collapse;
+}
+.table th {
+  text-align: left; padding: 14px 20px;
+  font-size: 12px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: .05em;
+  color: var(--color-text-muted);
+  background: var(--color-surface-2);
+  border-bottom: 1px solid var(--color-border-light);
+}
+.table td {
+  padding: 14px 20px;
+  font-size: 14px;
+  border-bottom: 1px solid var(--color-border-light);
+  vertical-align: middle;
+}
+.table tr:last-child td { border-bottom: none; }
+.table tbody tr:hover { background: var(--color-bg); }
+
+.overdueRow { background: #fff8f8; }
+
+.bookCell  { display: flex; align-items: center; gap: 12px; }
+.bookThumb {
+  width: 36px; height: 46px; border-radius: var(--radius-sm);
+  background: var(--color-primary-50);
+  display: flex; align-items: center; justify-content: center;
+  color: var(--color-primary); flex-shrink: 0;
+}
+.bookTitle  { font-size: 14px; font-weight: 600; }
+.bookAuthor { font-size: 12px; color: var(--color-text-muted); }
+.date { color: var(--color-text-secondary); white-space: nowrap; }

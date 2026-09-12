@@ -1,0 +1,167 @@
+.page {
+  padding: 36px 40px;
+}
+
+.filters {
+  display: flex;
+  gap: 12px;
+  align-items: flex-end;
+  margin-bottom: 28px;
+  flex-wrap: wrap;
+}
+
+.filters>* {
+  min-width: 0;
+}
+
+.filters> :not(.searchWrap) {
+  flex: 0 1 220px;
+  max-width: 100%;
+}
+
+.searchWrap {
+  flex: 1 1 240px;
+  min-width: min(240px, 100%);
+}
+
+.status {
+  padding: 40px 0;
+  text-align: center;
+  color: var(--color-text-secondary);
+  font-size: 14px;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 20px;
+}
+
+.bookCard {
+  background: var(--color-surface);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border-light);
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  padding: 6px;
+  transition: box-shadow .2s, transform .2s;
+}
+
+.bookCard:hover {
+  box-shadow: var(--shadow-md);
+  transform: translateY(-3px);
+}
+
+.cover {
+  width: 100%;
+  aspect-ratio: 2 / 3;
+  height: auto;
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  cursor: pointer;
+}
+
+.info {
+  padding: 8px 2px 2px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.genreTag {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  color: var(--color-primary);
+  margin: 0;
+}
+
+.title {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--color-text);
+  cursor: pointer;
+  line-height: 1.35;
+  margin: 0;
+}
+
+.title:hover {
+  color: var(--color-primary);
+}
+
+.author {
+  font-size: 12px;
+  color: var(--color-text-secondary);
+  margin: 0;
+}
+
+.footer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  margin-top: 4px;
+  padding-top: 0;
+}
+
+.footer> :first-child {
+  align-self: flex-start;
+}
+
+.footer>button {
+  width: 100%;
+}
+
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 28px;
+}
+
+.pageSummary {
+  color: var(--color-text-secondary);
+  font-size: 13px;
+}
+
+.pageControls {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.pageNumber {
+  min-width: 32px;
+  height: 32px;
+  padding: 0 8px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  color: var(--color-text-secondary);
+  cursor: pointer;
+}
+
+.pageNumber:hover,
+.currentPage {
+  border-color: var(--color-primary);
+  background: var(--color-primary-50);
+  color: var(--color-primary);
+}
+
+@media (max-width: 640px) {
+  .pagination {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .pageControls {
+    justify-content: center;
+  }
+}

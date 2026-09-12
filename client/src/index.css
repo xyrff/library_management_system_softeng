@@ -1,3 +1,66 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+:root {
+    --color-primary: #0A2472;
+    --color-primary-light: #12358f;
+    --color-primary-dark: #081C58;
+    --color-primary-50: #eef2ff;
+    --color-primary-100: #dbe4ff;
+    --color-accent: #FFC72C;
+    --color-accent-light: #ffd65c;
+    --color-accent-50: #fff8df;
+    --color-bg: #f5f3ef;
+    --color-surface: #ffffff;
+    --color-surface-2: #fafaf8;
+    --color-border: #e2ddd6;
+    --color-border-light: #ede9e3;
+    --color-text: #1c1917;
+    --color-text-secondary: #57534e;
+    --color-text-muted: #a8a29e;
+    --color-success: #166534;
+    --color-success-bg: #dcfce7;
+    --color-warning: #92400e;
+    --color-warning-bg: #fef3c7;
+    --color-danger: #991b1b;
+    --color-danger-bg: #fee2e2;
+    --color-info: #1e40af;
+    --color-info-bg: #dbeafe;
+
+    --radius-sm: 6px;
+    --radius-md: 10px;
+    --radius-lg: 14px;
+    --radius-xl: 20px;
+    --radius-full: 9999px;
+    --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
+    --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08), 0 2px 4px rgba(0, 0, 0, 0.04);
+    --shadow-xl: 0 20px 50px rgba(0, 0, 0, 0.14);
+    --sidebar-width: 240px;
+
+    /* Aliases used by the retained Vite starter selectors in App.css. */
+    --accent: var(--color-accent);
+    --accent-bg: var(--color-accent-50);
+    --accent-border: var(--color-accent-light);
+    --border: var(--color-border);
+    --shadow: var(--shadow-md);
+    --social-bg: var(--color-surface-2);
+    --text-h: var(--color-text);
+
+    font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    color: var(--color-text);
+    background: var(--color-bg);
+}
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    min-width: 320px;
+    min-height: 100vh;
+    font-family: inherit;
+    background: var(--color-bg);
+    color: inherit;
+}
+
+a {
+    text-decoration: none;
+}

@@ -1,0 +1,94 @@
+.sidebar {
+  width: var(--sidebar-width);
+  min-height: 100vh;
+  background: var(--color-primary-dark);
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+  flex-shrink: 0;
+  position: sticky;
+  top: 0;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 24px 20px 20px;
+  border-bottom: 1px solid rgba(255,255,255,.08);
+}
+.brandIcon {
+  width: 40px; height: 40px;
+  border-radius: var(--radius-md);
+  background: var(--color-primary);
+  display: flex; align-items: center; justify-content: center;
+  color: #fff;
+  flex-shrink: 0;
+}
+.brandName { font-size: 14px; font-weight: 700; color: #fff; }
+.brandSub  { font-size: 11px; color: rgba(255,255,255,.45); margin-top: 1px; }
+
+.userInfo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 16px 20px;
+  border-bottom: 1px solid rgba(255,255,255,.08);
+  margin-bottom: 8px;
+}
+.avatar {
+  width: 36px; height: 36px;
+  border-radius: 50%;
+  background: var(--color-accent);
+  color: var(--color-primary-dark);
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 700; font-size: 15px;
+  flex-shrink: 0;
+}
+.userName { font-size: 13px; font-weight: 600; color: #fff; }
+.userRole { font-size: 11px; color: rgba(255,255,255,.45); text-transform: capitalize; }
+
+.nav { padding: 0 12px; flex: 1; }
+.navSection {
+  font-size: 10px; font-weight: 700; letter-spacing: .1em;
+  text-transform: uppercase; color: rgba(255,255,255,.3);
+  padding: 8px 8px 6px;
+  margin-bottom: 2px;
+}
+
+.link {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: var(--radius-md);
+  color: rgba(255,255,255,.65);
+  font-size: 14px;
+  font-weight: 500;
+  transition: all .15s;
+  margin-bottom: 2px;
+}
+.link:hover { background: rgba(255,255,255,.08); color: #fff; }
+.active {
+  background: var(--color-primary) !important;
+  color: #fff !important;
+  box-shadow: inset 3px 0 0 var(--color-accent);
+}
+.linkIcon { display: flex; align-items: center; flex-shrink: 0; }
+
+.logout {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 16px 24px;
+  border: none;
+  background: none;
+  color: rgba(255,255,255,.4);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  width: 100%;
+  border-top: 1px solid rgba(255,255,255,.08);
+  transition: color .15s;
+}
+.logout:hover { color: rgba(255,255,255,.8); }
