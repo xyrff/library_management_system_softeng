@@ -1,33 +1,109 @@
-import { useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Calendar } from 'lucide-react';
-import { mockBooks } from '../../data/mockData';
+import { useEffect, useState } from 'react';
+import { Link, useNavigate, useParams } from 'react-router-dom';
+import { ArrowLeft } from 'lucide-react';
+import api from '../../services/api';
 import Badge from '../../components/ui/Badge';
 import Button from '../../components/ui/Button';
 import BookCover from '../../components/ui/BookCover';
 import BorrowModal from './BorrowModal';
 import styles from './BookDetailPage.module.css';
 
-const coverColors = ['#e8f5ee','#fdf0f2','#dbeafe','#fef3c7','#f3e8ff','#fde8d8'];
+const coverColors = ['#e8f5ee', '#fdf0f2', '#dbeafe', '#fef3c7', '#f3e8ff', '#fde8d8'];
 
 export default function BookDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const [book, setBook] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [notFound, setNotFound] = useState(false);
+  const [error, setError] = useState('');
   const [showModal, setShowModal] = useState(false);
+  const [showFullSynopsis, setShowFullSynopsis] = useState(false);
 
-  const book = mockBooks.find(b => b.id === id);
-  if (!book) return (
+  useEffect(() => {
+    let isMounted = true;
+
+    const fetchBook = async () => {
+      setLoading(true);
+      setBook(null);
+      setNotFound(false);
+      setError('');
+      setShowModal(false);
+
+      if (!id || !/^[a-f\d]{24}$/i.test(id)) {
+        setNotFound(true);
+        setLoading(false);
+        return;
+      }
+
+      try {
+        const res = await api.get(`/books/${id}`);
+        if (isMounted) {
+          if (res.data) {
+            setBook(res.data);
+          } else {
+            setNotFound(true);
+          }
+        }
+      } catch (err) {
+        if (!isMounted) return;
+
+        if (err.response?.status === 404) {
+          setNotFound(true);
+        } else {
+          setError('Could not load this book. Please make sure the server is running.');
+        }
+      } finally {
+        if (isMounted) setLoading(false);
+      }
+    };
+
+    fetchBook();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [id]);
+
+  if (loading) return (
+    <div className={styles.page}>
+      <Button variant="ghost" icon={<ArrowLeft size={16} />} onClick={() => navigate(-1)}>Back</Button>
+      <p style={{ marginTop: 40, color: 'var(--color-text-secondary)' }}>Loading book…</p>
+    </div>
+  );
+
+  if (notFound) return (
     <div className={styles.page}>
       <Button variant="ghost" icon={<ArrowLeft size={16} />} onClick={() => navigate(-1)}>Back</Button>
       <p style={{ marginTop: 40, color: 'var(--color-text-secondary)' }}>Book not found.</p>
     </div>
   );
 
-  const colorIdx = mockBooks.indexOf(book);
+  if (error) return (
+    <div className={styles.page}>
+      <Button variant="ghost" icon={<ArrowLeft size={16} />} onClick={() => navigate(-1)}>Back</Button>
+      <p style={{ marginTop: 40, color: 'var(--color-text-secondary)' }}>{error}</p>
+    </div>
+  );
+
+  const colorIdx = book._id ? book._id.charCodeAt(0) : 0;
+  const availableCopies = Number(book.availableCopies) || 0;
+  const totalCopies = Number(book.totalCopies) || 0;
+  const availability = availableCopies > 0
+    ? 'Available'
+    : totalCopies > 0
+      ? 'Currently Borrowed'
+      : 'Unavailable';
 
   return (
     <div className={styles.page}>
-      <Button variant="ghost" icon={<ArrowLeft size={16} />} onClick={() => navigate(-1)}>Back to Catalog</Button>
+      <nav className={styles.breadcrumb} aria-label="Breadcrumb">
+        <Link to="/catalog">Catalog</Link>
+        <span>/</span>
+        <span>{book.genre}</span>
+        <span>/</span>
+        <strong>{book.title}</strong>
+      </nav>
 
       <div className={styles.detail}>
         <div className={styles.coverSection}>
@@ -37,12 +113,6 @@ export default function BookDetailPage() {
             style={{ background: coverColors[colorIdx % coverColors.length] }}
             iconSize={64}
           />
-          <div className={styles.metaBox}>
-            <div className={styles.metaRow}><span>Genre</span><strong>{book.genre}</strong></div>
-            <div className={styles.metaRow}><span>ISBN</span><strong>{book.isbn}</strong></div>
-            <div className={styles.metaRow}><span>Total copies</span><strong>{book.copies}</strong></div>
-            <div className={styles.metaRow}><span>Available</span><strong>{book.availableCopies}</strong></div>
-          </div>
         </div>
 
         <div className={styles.infoSection}>
@@ -50,23 +120,49 @@ export default function BookDetailPage() {
           <h1 className={styles.title}>{book.title}</h1>
           <p className={styles.author}>by {book.author}</p>
 
-          <Badge label={book.status === 'available' ? 'Available' : 'Currently Borrowed'} />
-
-          <p className={styles.description}>{book.description}</p>
-
-          {book.status !== 'available' && book.expectedReturn && (
-            <div className={styles.returnInfo}>
-              <Calendar size={15} />
-              <span>Expected return: <strong>{new Date(book.expectedReturn).toLocaleDateString('en-US', { month:'long', day:'numeric', year:'numeric' })}</strong></span>
+          <div className={styles.metadata}>
+            <h2 className={styles.sectionHeading}>Book details</h2>
+            <div className={styles.metaList}>
+              <div className={styles.metaRow}><span>Genre</span><strong>{book.genre || 'Not available'}</strong></div>
+              <div className={styles.metaRow}><span>ISBN</span><strong>{book.isbn || 'Not available'}</strong></div>
+              <div className={styles.metaRow}><span>Shelf location</span><strong>{book.shelfLocation || 'Not available'}</strong></div>
             </div>
-          )}
+          </div>
 
-          <div className={styles.cta}>
-            {book.status === 'available' ? (
-              <Button size="lg" onClick={() => setShowModal(true)}>Request to Borrow</Button>
-            ) : (
-              <Button size="lg" variant="ghost" disabled>Currently Unavailable</Button>
+          <section className={styles.synopsis}>
+            <h2 className={styles.sectionHeading}>Synopsis</h2>
+            <p className={`${styles.description} ${!showFullSynopsis ? styles.clamped : ''}`}>
+              {book.description || 'Description not available.'}
+            </p>
+            {book.description && book.description.length > 220 && (
+              <button
+                className={styles.seeMoreBtn}
+                onClick={() => setShowFullSynopsis((prev) => !prev)}
+              >
+                {showFullSynopsis ? 'See less' : 'See more'}
+              </button>
             )}
+          </section>
+
+          <div className={styles.statusCard}>
+            <div className={styles.statusHeader}>
+              <div>
+                <h2 className={styles.sectionHeading}>Availability</h2>
+                <p className={styles.copies}>{availableCopies} of {totalCopies} copies available</p>
+              </div>
+              <Badge label={availability} />
+            </div>
+
+            <div className={styles.actions}>
+              {availableCopies > 0 ? (
+                <Button size="lg" onClick={() => setShowModal(true)}>Request to Borrow</Button>
+              ) : (
+                <Button size="lg" variant="outline" disabled title="Reservations are coming soon">
+                  Place Hold / Reserve
+                </Button>
+              )}
+              <Button variant="secondary" size="lg" onClick={() => navigate('/catalog')}>Back to Catalog</Button>
+            </div>
           </div>
         </div>
       </div>

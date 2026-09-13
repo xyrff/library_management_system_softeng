@@ -4,13 +4,11 @@ import { useNavigate } from 'react-router-dom';
 import { GENRES } from '../../data/mockData';
 import api from '../../services/api';
 import PageHeader from '../../components/layout/PageHeader';
-import Badge from '../../components/ui/Badge';
 import Button from '../../components/ui/Button';
 import BookCover from '../../components/ui/BookCover';
 import Input from '../../components/ui/Input';
 import Select from '../../components/ui/Select';
 import EmptyState from '../../components/ui/EmptyState';
-import BorrowModal from './BorrowModal';
 import styles from './CatalogPage.module.css';
 
 const coverColors = ['#e8f5ee', '#fdf0f2', '#dbeafe', '#fef3c7', '#f3e8ff', '#fde8d8'];
@@ -21,7 +19,6 @@ export default function CatalogPage() {
   const [search, setSearch] = useState('');
   const [genre, setGenre] = useState('');
   const [avail, setAvail] = useState('');
-  const [modalBook, setModalBook] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
   const gridRef = useRef(null);
   const hasRenderedGrid = useRef(false);
@@ -133,79 +130,69 @@ export default function CatalogPage() {
         />
       ) : (
         <>
-        <div className={styles.grid} ref={gridRef}>
-          {paginatedBooks.map((book, i) => {
-            const isAvailable = book.availableCopies > 0;
-            return (
-              <div key={book._id} className={styles.bookCard}>
+          <div className={styles.grid} ref={gridRef}>
+            {paginatedBooks.map((book, i) => (
+              <div
+                key={book._id}
+                className={styles.bookCard}
+                onClick={() => navigate(`/books/${book._id}`)}
+                role="button"
+                tabIndex={0}
+                onKeyDown={e => e.key === 'Enter' && navigate(`/books/${book._id}`)}
+              >
                 <BookCover
                   book={book}
                   className={styles.cover}
                   style={{ background: coverColors[i % coverColors.length] }}
                   iconSize={40}
-                  onClick={() => navigate(`/books/${book._id}`)}
-                  role="button"
-                  tabIndex={0}
-                  onKeyDown={e => e.key === 'Enter' && navigate(`/books/${book._id}`)}
                   ariaLabel={`View details for ${book.title}`}
                 />
                 <div className={styles.info}>
                   <div className={styles.genreTag}>{book.genre}</div>
-                  <h3 className={styles.title} onClick={() => navigate(`/books/${book._id}`)}>{book.title}</h3>
+                  <h3 className={styles.title}>{book.title}</h3>
                   <p className={styles.author}>{book.author}</p>
-                  <div className={styles.footer}>
-                    <Badge label={isAvailable ? 'Available' : 'Currently Borrowed'} />
-                    {isAvailable ? (
-                      <Button size="sm" onClick={() => setModalBook(book)}>Borrow</Button>
-                    ) : (
-                      <Button size="sm" variant="ghost" disabled>Unavailable</Button>
-                    )}
-                  </div>
                 </div>
               </div>
-            );
-          })}
-        </div>
-        <div className={styles.pagination}>
-          <span className={styles.pageSummary}>
-            Showing {pageStart + 1}–{Math.min(pageStart + BOOKS_PER_PAGE, filtered.length)} of {filtered.length}
-          </span>
-          {totalPages > 1 && (
-            <div className={styles.pageControls}>
-              <Button
-                variant="secondary"
-                size="sm"
-                disabled={currentPage === 1}
-                onClick={() => setCurrentPage(page => page - 1)}
-              >
-                Previous
-              </Button>
-              {Array.from({ length: totalPages }, (_, index) => index + 1).map(page => (
-                <button
-                  key={page}
-                  type="button"
-                  className={`${styles.pageNumber} ${page === currentPage ? styles.currentPage : ''}`}
-                  onClick={() => setCurrentPage(page)}
-                  aria-current={page === currentPage ? 'page' : undefined}
+            ))}
+          </div>
+          <div className={styles.pagination}>
+            <span className={styles.pageSummary}>
+              Showing {pageStart + 1}–{Math.min(pageStart + BOOKS_PER_PAGE, filtered.length)} of {filtered.length}
+            </span>
+            {totalPages > 1 && (
+              <div className={styles.pageControls}>
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  disabled={currentPage === 1}
+                  onClick={() => setCurrentPage(page => page - 1)}
                 >
-                  {page}
-                </button>
-              ))}
-              <Button
-                variant="secondary"
-                size="sm"
-                disabled={currentPage === totalPages}
-                onClick={() => setCurrentPage(page => page + 1)}
-              >
-                Next
-              </Button>
-            </div>
-          )}
-        </div>
+                  Previous
+                </Button>
+                {Array.from({ length: totalPages }, (_, index) => index + 1).map(page => (
+                  <button
+                    key={page}
+                    type="button"
+                    className={`${styles.pageNumber} ${page === currentPage ? styles.currentPage : ''}`}
+                    onClick={() => setCurrentPage(page)}
+                    aria-current={page === currentPage ? 'page' : undefined}
+                  >
+                    {page}
+                  </button>
+                ))}
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  disabled={currentPage === totalPages}
+                  onClick={() => setCurrentPage(page => page + 1)}
+                >
+                  Next
+                </Button>
+              </div>
+            )}
+          </div>
         </>
       )}
-
-      <BorrowModal book={modalBook} onClose={() => setModalBook(null)} />
     </div>
   );
 }

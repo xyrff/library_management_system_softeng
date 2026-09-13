@@ -76,6 +76,12 @@
   color: var(--color-primary);
 }
 
+.dateGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
 .summary {
   display: flex;
   justify-content: space-between;

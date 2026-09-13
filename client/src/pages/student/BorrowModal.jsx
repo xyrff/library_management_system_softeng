@@ -6,13 +6,56 @@ import Input from '../../components/ui/Input';
 import BookCover from '../../components/ui/BookCover';
 import styles from './BorrowModal.module.css';
 
+// Formats a Date object as "YYYY-MM-DD", the format <input type="date"> needs
+const toDateInputValue = (date) => {
+  const d = new Date(date);
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
+// Adds N days to a "YYYY-MM-DD" string and returns a new "YYYY-MM-DD" string
+const addDays = (dateStr, days) => {
+  const d = new Date(dateStr + 'T00:00:00');
+  d.setDate(d.getDate() + days);
+  return toDateInputValue(d);
+};
+
+const todayStr = toDateInputValue(new Date());
+
 export default function BorrowModal({ book, onClose }) {
-  const [days, setDays]     = useState(14);
+  const [borrowDate, setBorrowDate] = useState(todayStr);
+  const [returnDate, setReturnDate] = useState(addDays(todayStr, 14));
   const [submitted, setSubmitted] = useState(false);
 
-  const handleClose = () => { setSubmitted(false); onClose(); };
+  const handleClose = () => {
+    setSubmitted(false);
+    setBorrowDate(todayStr);
+    setReturnDate(addDays(todayStr, 14));
+    onClose();
+  };
+
+  const handleBorrowDateChange = (e) => {
+    const newBorrowDate = e.target.value;
+    setBorrowDate(newBorrowDate);
+
+    const minReturn = addDays(newBorrowDate, 1);
+    const maxReturn = addDays(newBorrowDate, 30);
+
+    // If the current return date no longer makes sense with the new borrow
+    // date, auto-adjust it instead of showing an error
+    if (returnDate <= newBorrowDate) {
+      setReturnDate(addDays(newBorrowDate, 14));
+    } else if (returnDate > maxReturn) {
+      setReturnDate(maxReturn);
+    }
+  };
 
   if (!book) return null;
+
+  const minReturnDate = addDays(borrowDate, 1);
+  const maxReturnDate = addDays(borrowDate, 30);
 
   return (
     <Modal isOpen={!!book} onClose={handleClose} title="Borrow Request" size="sm">
@@ -29,32 +72,35 @@ export default function BorrowModal({ book, onClose }) {
           </div>
 
           <div className={styles.field}>
-            <label className={styles.label}>Borrow duration</label>
-            <div className={styles.durationGrid}>
-              {[7, 14, 21, 30].map(d => (
-                <button
-                  key={d}
-                  className={`${styles.durationChip} ${days === d ? styles.active : ''}`}
-                  onClick={() => setDays(d)}
-                  type="button"
-                >
-                  {d} days
-                </button>
-              ))}
+            <div className={styles.dateGrid}>
+              <Input
+                type="date"
+                label="Borrow date"
+                value={borrowDate}
+                onChange={handleBorrowDateChange}
+                min={todayStr}
+              />
+              <Input
+                type="date"
+                label="Return date"
+                value={returnDate}
+                onChange={(e) => setReturnDate(e.target.value)}
+                min={minReturnDate}
+                max={maxReturnDate}
+              />
             </div>
-            <Input
-              type="number"
-              label="Or enter custom days (1–30)"
-              value={days}
-              onChange={e => setDays(Math.min(30, Math.max(1, Number(e.target.value))))}
-              min={1}
-              max={30}
-            />
           </div>
 
           <div className={styles.summary}>
             <span>Due date:</span>
-            <strong>{new Date(Date.now() + days * 86400000).toLocaleDateString('en-US', { weekday:'short', month:'short', day:'numeric', year:'numeric' })}</strong>
+            <strong>
+              {new Date(returnDate + 'T00:00:00').toLocaleDateString('en-US', {
+                weekday: 'short',
+                month: 'short',
+                day: 'numeric',
+                year: 'numeric',
+              })}
+            </strong>
           </div>
 
           <div className={styles.actions}>
