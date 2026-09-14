@@ -191,6 +191,8 @@
   gap: 12px;
   margin-top: 16px;
 }
+.reservationSuccess { color: var(--color-success); font-size: 13px; }
+.reservationError { color: var(--color-danger); font-size: 13px; }
 
 @media (max-width: 760px) {
   .page {

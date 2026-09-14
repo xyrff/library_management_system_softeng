@@ -19,16 +19,17 @@ export default function BookDetailPage() {
   const [error, setError] = useState('');
   const [showModal, setShowModal] = useState(false);
   const [showFullSynopsis, setShowFullSynopsis] = useState(false);
+  const [reserving, setReserving] = useState(false);
+  const [reservationMessage, setReservationMessage] = useState('');
+  const [reservationError, setReservationError] = useState('');
 
   useEffect(() => {
     let isMounted = true;
 
-    const fetchBook = async () => {
-      setLoading(true);
-      setBook(null);
+    const fetchBook = async (showLoading = true) => {
+      if (showLoading) setLoading(true);
       setNotFound(false);
       setError('');
-      setShowModal(false);
 
       if (!id || !/^[a-f\d]{24}$/i.test(id)) {
         setNotFound(true);
@@ -46,24 +47,46 @@ export default function BookDetailPage() {
           }
         }
       } catch (err) {
-        if (!isMounted) return;
-
-        if (err.response?.status === 404) {
-          setNotFound(true);
-        } else {
-          setError('Could not load this book. Please make sure the server is running.');
+        if (isMounted) {
+          if (err.response?.status === 404) {
+            setNotFound(true);
+          } else {
+            setError('Could not load this book. Please make sure the server is running.');
+          }
         }
       } finally {
-        if (isMounted) setLoading(false);
+        if (isMounted && showLoading) setLoading(false);
       }
     };
 
     fetchBook();
 
+    const refreshWhenVisible = () => {
+      if (document.visibilityState === 'visible') fetchBook(false);
+    };
+    window.addEventListener('focus', refreshWhenVisible);
+    document.addEventListener('visibilitychange', refreshWhenVisible);
+
     return () => {
       isMounted = false;
+      window.removeEventListener('focus', refreshWhenVisible);
+      document.removeEventListener('visibilitychange', refreshWhenVisible);
     };
   }, [id]);
+
+  const reserveBook = async () => {
+    setReserving(true);
+    setReservationMessage('');
+    setReservationError('');
+    try {
+      await api.post('/reservations', { bookId: book._id });
+      setReservationMessage('You are now in the reservation queue.');
+    } catch (err) {
+      setReservationError(err.response?.data?.message || 'Could not reserve this book. Please try again.');
+    } finally {
+      setReserving(false);
+    }
+  };
 
   if (loading) return (
     <div className={styles.page}>
@@ -157,12 +180,14 @@ export default function BookDetailPage() {
               {availableCopies > 0 ? (
                 <Button size="lg" onClick={() => setShowModal(true)}>Request to Borrow</Button>
               ) : (
-                <Button size="lg" variant="outline" disabled title="Reservations are coming soon">
-                  Place Hold / Reserve
+                <Button size="lg" variant="outline" onClick={reserveBook} disabled={reserving}>
+                  {reserving ? 'Reserving…' : 'Reserve'}
                 </Button>
               )}
               <Button variant="secondary" size="lg" onClick={() => navigate('/catalog')}>Back to Catalog</Button>
             </div>
+            {reservationMessage && <p className={styles.reservationSuccess}>{reservationMessage}</p>}
+            {reservationError && <p className={styles.reservationError}>{reservationError}</p>}
           </div>
         </div>
       </div>

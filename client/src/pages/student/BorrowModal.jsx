@@ -1,5 +1,6 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { CheckCircle } from 'lucide-react';
+import api from '../../services/api';
 import Modal from '../../components/ui/Modal';
 import Button from '../../components/ui/Button';
 import Input from '../../components/ui/Input';
@@ -28,12 +29,39 @@ export default function BorrowModal({ book, onClose }) {
   const [borrowDate, setBorrowDate] = useState(todayStr);
   const [returnDate, setReturnDate] = useState(addDays(todayStr, 14));
   const [submitted, setSubmitted] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState('');
+  const submitLockRef = useRef(false);
 
   const handleClose = () => {
     setSubmitted(false);
     setBorrowDate(todayStr);
     setReturnDate(addDays(todayStr, 14));
+    setSubmitting(false);
+    setError('');
+    submitLockRef.current = false;
     onClose();
+  };
+
+  const handleSubmit = async () => {
+    if (submitLockRef.current) return;
+    submitLockRef.current = true;
+    setSubmitting(true);
+    setError('');
+
+    try {
+      await api.post('/transactions/borrow', {
+        bookId: book._id,
+        borrowDate,
+        returnDate,
+      });
+      setSubmitted(true);
+    } catch (err) {
+      setError(err.response?.data?.message || 'Could not submit your request. Please try again.');
+    } finally {
+      setSubmitting(false);
+      submitLockRef.current = false;
+    }
   };
 
   const handleBorrowDateChange = (e) => {
@@ -103,9 +131,13 @@ export default function BorrowModal({ book, onClose }) {
             </strong>
           </div>
 
+          {error && <p className={styles.error}>{error}</p>}
+
           <div className={styles.actions}>
             <Button variant="ghost" onClick={handleClose}>Cancel</Button>
-            <Button onClick={() => setSubmitted(true)}>Submit Request</Button>
+            <Button onClick={handleSubmit} disabled={submitting}>
+              {submitting ? 'Submitting…' : 'Submit Request'}
+            </Button>
           </div>
         </div>
       ) : (

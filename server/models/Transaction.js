@@ -7,10 +7,23 @@ const transactionSchema = new mongoose.Schema(
     borrowDate: { type: Date, required: true, default: Date.now },
     dueDate: { type: Date, required: true },
     returnDate: { type: Date, default: null },
-    status: { type: String, enum: ["borrowed", "returned", "overdue"], default: "borrowed" },
+    activeRequestKey: { type: String, select: false },
+    status: {
+      type: String,
+      enum: ["pending", "approved", "rejected", "returned", "overdue"],
+      default: "pending",
+    },
     lateReturnRiskScore: { type: Number, default: null },
   },
   { timestamps: true }
+);
+
+transactionSchema.index(
+  { activeRequestKey: 1 },
+  {
+    unique: true,
+    sparse: true,
+  }
 );
 
 module.exports = mongoose.model("Transaction", transactionSchema);
