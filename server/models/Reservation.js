@@ -9,6 +9,7 @@ const reservationSchema = new mongoose.Schema(
       enum: ["waiting", "ready", "claimed", "expired", "cancelled"],
       default: "waiting",
     },
+    readyAt: { type: Date, default: null },
     notifiedAt: { type: Date, default: null },
     claimExpiresAt: { type: Date, default: null },
   },

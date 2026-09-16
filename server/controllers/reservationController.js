@@ -4,12 +4,48 @@ const Transaction = require("../models/Transaction");
 const Book = require("../models/Book");
 
 const CLAIM_WINDOW_MS = 2 * 24 * 60 * 60 * 1000;
-const LOAN_PERIOD_MS = 14 * 24 * 60 * 60 * 1000;
+const getClaimExpiry = (readyAt) => new Date(readyAt.getTime() + CLAIM_WINDOW_MS);
+const getTodayDate = () => {
+  const now = new Date();
+  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+};
+
+const parseClaimDates = (borrowDate, returnDate) => {
+  if (!borrowDate || !returnDate) {
+    return { error: "borrowDate and returnDate are required" };
+  }
+
+  const parsedBorrowDate = new Date(borrowDate);
+  const parsedReturnDate = new Date(returnDate);
+  if (Number.isNaN(parsedBorrowDate.getTime()) || Number.isNaN(parsedReturnDate.getTime())) {
+    return { error: "borrowDate and returnDate must be valid dates" };
+  }
+  if (String(borrowDate).slice(0, 10) !== getTodayDate()) {
+    return { error: "borrowDate must be today" };
+  }
+  if (parsedReturnDate <= parsedBorrowDate) {
+    return { error: "returnDate must be after borrowDate" };
+  }
+
+  return { parsedBorrowDate, parsedReturnDate };
+};
+
+const promoteReservationUpdate = () => {
+  const readyAt = new Date();
+  return {
+    $set: {
+      status: "ready",
+      readyAt,
+      notifiedAt: readyAt,
+      claimExpiresAt: getClaimExpiry(readyAt),
+    },
+  };
+};
 
 const promoteNextReservation = async (bookId) => {
   const next = await Reservation.findOneAndUpdate(
     { bookId, status: "waiting" },
-    { $set: { status: "ready", notifiedAt: new Date(), claimExpiresAt: new Date(Date.now() + CLAIM_WINDOW_MS) } },
+    promoteReservationUpdate(),
     { sort: { createdAt: 1 }, new: true }
   );
   if (next) return next;
@@ -18,26 +54,28 @@ const promoteNextReservation = async (bookId) => {
 };
 
 const expireReservation = async (reservation) => {
+  const cutoff = new Date(Date.now() - CLAIM_WINDOW_MS);
   const expired = await Reservation.findOneAndUpdate(
-    { _id: reservation._id, status: "ready", claimExpiresAt: { $lte: new Date() } },
-    { $set: { status: "expired" } },
+    { _id: reservation._id, status: "ready", readyAt: { $lte: cutoff } },
+    { $set: { status: "expired" }, $unset: { claimExpiresAt: 1 } },
     { new: true }
   );
   return expired ? promoteNextReservation(expired.bookId) : null;
 };
 
 const processExpiredReservations = async (bookId) => {
+  const cutoff = new Date(Date.now() - CLAIM_WINDOW_MS);
   const filter = bookId
-    ? { bookId, status: "ready", claimExpiresAt: { $lte: new Date() } }
-    : { status: "ready", claimExpiresAt: { $lte: new Date() } };
-  const expired = await Reservation.find(filter).sort({ claimExpiresAt: 1 });
+    ? { bookId, status: "ready", readyAt: { $lte: cutoff } }
+    : { status: "ready", readyAt: { $lte: cutoff } };
+  const expired = await Reservation.find(filter).sort({ readyAt: 1 });
   for (const reservation of expired) await expireReservation(reservation);
 };
 
 const holdNextReservation = async (bookId) => {
   const next = await Reservation.findOneAndUpdate(
     { bookId, status: "waiting" },
-    { $set: { status: "ready", notifiedAt: new Date(), claimExpiresAt: new Date(Date.now() + CLAIM_WINDOW_MS) } },
+    promoteReservationUpdate(),
     { sort: { createdAt: 1 }, new: true }
   );
   if (!next) return false;
@@ -50,7 +88,7 @@ const holdNextReservation = async (bookId) => {
   if (!heldBook) {
     await Reservation.findOneAndUpdate(
       { _id: next._id, status: "ready" },
-      { $set: { status: "waiting", notifiedAt: null, claimExpiresAt: null } }
+      { $set: { status: "waiting", readyAt: null, notifiedAt: null, claimExpiresAt: null } }
     );
     return false;
   }
@@ -107,20 +145,42 @@ exports.getMyReservations = async (req, res) => {
 exports.claimReservation = async (req, res) => {
   try {
     await processExpiredReservations();
+    const { borrowDate, returnDate } = req.body;
+    const dates = parseClaimDates(borrowDate, returnDate);
+    if (dates.error) return res.status(400).json({ message: dates.error });
+
+    const reservationState = await Reservation.findOne({
+      _id: req.params.id,
+      memberId: req.user.id,
+    }).select("status readyAt");
+    if (!reservationState) return res.status(404).json({ message: "Reservation not found" });
+    if (reservationState.status === "expired") {
+      return res.status(400).json({ message: "Reservation has expired and can no longer be claimed" });
+    }
+    if (reservationState.status !== "ready") {
+      return res.status(400).json({ message: "Reservation is not ready to be claimed" });
+    }
+
     const reservation = await Reservation.findOneAndUpdate(
-      { _id: req.params.id, memberId: req.user.id, status: "ready", claimExpiresAt: { $gt: new Date() } },
+      {
+        _id: req.params.id,
+        memberId: req.user.id,
+        status: "ready",
+        readyAt: { $gt: new Date(Date.now() - CLAIM_WINDOW_MS) },
+      },
       { $set: { status: "claimed" } },
       { new: true }
     );
-    if (!reservation) return res.status(400).json({ message: "Reservation is not ready or its claim window has expired" });
+    if (!reservation) return res.status(400).json({ message: "Reservation is no longer available to claim" });
 
-    const now = new Date();
     let transaction;
     try {
       transaction = await Transaction.create({
         bookId: reservation.bookId, memberId: reservation.memberId,
-        activeRequestKey: `${reservation.bookId}:${reservation.memberId}`, borrowDate: now,
-        dueDate: new Date(now.getTime() + LOAN_PERIOD_MS), status: "approved",
+        activeRequestKey: `${reservation.bookId}:${reservation.memberId}`,
+        borrowDate: dates.parsedBorrowDate,
+        dueDate: dates.parsedReturnDate,
+        status: "approved",
       });
     } catch (err) {
       await Reservation.findOneAndUpdate(
@@ -131,6 +191,11 @@ exports.claimReservation = async (req, res) => {
     }
     res.status(201).json({ reservation, transaction });
   } catch (err) {
+    if (err.code === 11000) {
+      return res.status(409).json({
+        message: "You already have an active request or loan for this book",
+      });
+    }
     res.status(500).json({ message: err.message });
   }
 };
