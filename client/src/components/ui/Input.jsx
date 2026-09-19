@@ -1,6 +1,6 @@
 import styles from './Input.module.css';
 
-export default function Input({ label, type = 'text', placeholder, value, onChange, error, icon, required, name, min, max }) {
+export default function Input({ label, type = 'text', placeholder, value, onChange, error, icon, required, name, min, max, readOnly }) {
   return (
     <div className={styles.field}>
       {label && <label className={styles.label}>{label}{required && <span className={styles.required}>*</span>}</label>}
@@ -16,6 +16,7 @@ export default function Input({ label, type = 'text', placeholder, value, onChan
           min={min}
           max={max}
           required={required}
+          readOnly={readOnly}
         />
       </div>
       {error && <p className={styles.error}>{error}</p>}

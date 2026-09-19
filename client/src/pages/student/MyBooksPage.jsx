@@ -5,6 +5,8 @@ import PageHeader from '../../components/layout/PageHeader';
 import Badge from '../../components/ui/Badge';
 import Button from '../../components/ui/Button';
 import EmptyState from '../../components/ui/EmptyState';
+import BookCover from '../../components/ui/BookCover';
+import ReservationClaimModal from './ReservationClaimModal';
 import styles from './MyBooksPage.module.css';
 
 const statusLabel = { pending: 'Pending', approved: 'Approved', returned: 'Returned', overdue: 'Overdue', rejected: 'Rejected' };
@@ -16,6 +18,8 @@ export default function MyBooksPage() {
   const [reservations, setReservations] = useState([]);
   const [reservationsLoading, setReservationsLoading] = useState(true);
   const [reservationError, setReservationError] = useState('');
+  const [reservationActionError, setReservationActionError] = useState('');
+  const [claimReservation, setClaimReservation] = useState(null);
   const [tab, setTab] = useState('books');
 
   useEffect(() => {
@@ -53,11 +57,12 @@ export default function MyBooksPage() {
   }, []);
 
   const reservationAction = async (id, action) => {
+    setReservationActionError('');
     try {
       await api.post(`/reservations/${id}/${action}`);
       await fetchReservations();
     } catch (err) {
-      setReservationError(err.response?.data?.message || `Could not ${action} this reservation.`);
+      setReservationActionError(err.response?.data?.message || `Could not ${action} this reservation.`);
     }
   };
 
@@ -114,39 +119,52 @@ export default function MyBooksPage() {
       ) : reservationsLoading ? (
         <p className={styles.status}>Loading your reservations…</p>
       ) : reservationError ? (
-        <p className={styles.status}>{reservationError}</p>
+        <p className={styles.status} role="alert">{reservationError}</p>
       ) : reservations.length === 0 ? (
         <EmptyState icon={<Bookmark size={36} />} title="No reservations yet" description="Reserve a book when all copies are currently borrowed." />
       ) : (
-        <div className={styles.reservationList}>
-          {reservations.map(reservation => (
-            <div className={styles.reservationItem} key={reservation._id}>
-              <div>
-                <p className={styles.bookTitle}>{reservation.bookId?.title || 'Unknown book'}</p>
-                <p className={styles.bookAuthor}>{reservation.bookId?.author || '—'}</p>
-                <p className={styles.reservationDetail}>
-                  {reservation.status === 'waiting' && (
-                    <>Waiting in queue{reservation.estimatedAvailableDate && ` · Estimated availability ${new Date(reservation.estimatedAvailableDate).toLocaleDateString()}`}</>
+        <>
+          {reservationActionError && <p className={styles.inlineError} role="alert">{reservationActionError}</p>}
+          <div className={styles.reservationList}>
+            {reservations.map(reservation => (
+              <div className={styles.reservationItem} key={reservation._id}>
+                <div className={styles.reservationBook}>
+                  <BookCover book={reservation.bookId} className={styles.reservationCover} iconSize={20} />
+                  <div>
+                    <p className={styles.bookTitle}>{reservation.bookId?.title || 'Unknown book'}</p>
+                    <p className={styles.bookAuthor}>{reservation.bookId?.author || '—'}</p>
+                    <p className={styles.reservationDetail}>
+                      {reservation.status === 'waiting' && (
+                        <>Waiting in queue{reservation.estimatedAvailableDate && ` · Estimated availability ${new Date(reservation.estimatedAvailableDate).toLocaleDateString()}`}</>
+                      )}
+                      {reservation.status === 'ready' && (
+                        <>Ready for pickup{reservation.readyAt && ` · Claim by ${new Date(new Date(reservation.readyAt).getTime() + 2 * 24 * 60 * 60 * 1000).toLocaleDateString()}`}</>
+                      )}
+                      {reservation.status === 'claimed' && 'Claimed'}
+                      {reservation.status === 'expired' && 'Claim window expired'}
+                      {reservation.status === 'cancelled' && 'Cancelled'}
+                    </p>
+                  </div>
+                </div>
+                <div className={styles.reservationActions}>
+                  <Badge label={reservation.status[0].toUpperCase() + reservation.status.slice(1)} />
+                  {reservation.status === 'ready' && (
+                    <Button size="sm" onClick={() => setClaimReservation(reservation)}>Claim</Button>
                   )}
-                  {reservation.status === 'ready' && <>Ready for pickup — claim by {new Date(reservation.claimExpiresAt).toLocaleDateString()}</>}
-                  {reservation.status === 'claimed' && 'Claimed'}
-                  {reservation.status === 'expired' && 'Claim window expired'}
-                  {reservation.status === 'cancelled' && 'Cancelled'}
-                </p>
+                  {['waiting', 'ready'].includes(reservation.status) && (
+                    <Button size="sm" variant="ghost" onClick={() => reservationAction(reservation._id, 'cancel')}>Cancel</Button>
+                  )}
+                </div>
               </div>
-              <div className={styles.reservationActions}>
-                <Badge label={reservation.status[0].toUpperCase() + reservation.status.slice(1)} />
-                {reservation.status === 'ready' && (
-                  <Button size="sm" onClick={() => reservationAction(reservation._id, 'claim')}>Claim</Button>
-                )}
-                {['waiting', 'ready'].includes(reservation.status) && (
-                  <Button size="sm" variant="ghost" onClick={() => reservationAction(reservation._id, 'cancel')}>Cancel</Button>
-                )}
-              </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        </>
       )}
+      <ReservationClaimModal
+        reservation={claimReservation}
+        onClose={() => setClaimReservation(null)}
+        onSuccess={fetchReservations}
+      />
     </div>
   );
 }

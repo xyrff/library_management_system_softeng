@@ -1,5 +1,11 @@
 .page { padding: 36px 40px; }
 
+.status {
+  margin: -18px 0 24px;
+  color: var(--color-text-secondary);
+  font-size: 14px;
+}
+
 .statsGrid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
@@ -35,6 +41,8 @@
   flex-shrink: 0;
 }
 .dot.pending  { background: #f59e0b; }
+.dot.approved { background: var(--color-success); }
+.dot.rejected { background: var(--color-danger); }
 .dot.overdue  { background: var(--color-danger); }
 .dot.returned { background: var(--color-success); }
 
@@ -42,3 +50,8 @@
 
 .activityMeta { display: flex; align-items: center; gap: 12px; }
 .activityDate { font-size: 12px; color: var(--color-text-muted); white-space: nowrap; }
+.emptyActivity {
+  padding: 24px 20px;
+  color: var(--color-text-secondary);
+  font-size: 14px;
+}

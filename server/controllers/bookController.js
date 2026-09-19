@@ -1,4 +1,6 @@
 const Book = require("../models/Book");
+const Transaction = require("../models/Transaction");
+const Reservation = require("../models/Reservation");
 
 exports.getBooks = async (req, res) => {
   // TODO: support search/filter query params (genre, author, availability)
@@ -13,16 +15,66 @@ exports.getBookById = async (req, res) => {
 };
 
 exports.createBook = async (req, res) => {
-  const book = await Book.create(req.body);
-  res.status(201).json(book);
+  try {
+    const bookData = { ...req.body };
+    delete bookData.availableCopies;
+    bookData.availableCopies = bookData.totalCopies;
+
+    const book = await Book.create(bookData);
+    res.status(201).json(book);
+  } catch (err) {
+    res.status(400).json({ message: err.message });
+  }
 };
 
 exports.updateBook = async (req, res) => {
-  const book = await Book.findByIdAndUpdate(req.params.id, req.body, { new: true });
-  res.json(book);
+  try {
+    const book = await Book.findById(req.params.id);
+    if (!book) return res.status(404).json({ message: "Book not found" });
+
+    const editableFields = ["title", "author", "genre", "isbn", "description", "shelfLocation"];
+    editableFields.forEach((field) => {
+      if (req.body[field] !== undefined) book[field] = req.body[field];
+    });
+
+    if (req.body.totalCopies !== undefined) {
+      const currentlyBorrowed = book.totalCopies - book.availableCopies;
+      const newTotalCopies = Number(req.body.totalCopies);
+      if (newTotalCopies < currentlyBorrowed) {
+        return res.status(400).json({
+          message: `Cannot reduce total copies below the number currently borrowed (${currentlyBorrowed})`,
+        });
+      }
+      book.totalCopies = req.body.totalCopies;
+      book.availableCopies = newTotalCopies - currentlyBorrowed;
+    }
+
+    await book.save();
+    res.json(book);
+  } catch (err) {
+    res.status(400).json({ message: err.message });
+  }
 };
 
 exports.deleteBook = async (req, res) => {
-  await Book.findByIdAndDelete(req.params.id);
-  res.json({ message: "Book deleted" });
+  try {
+    const book = await Book.findById(req.params.id);
+    if (!book) return res.status(404).json({ message: "Book not found" });
+
+    const [activeTransaction, activeReservation] = await Promise.all([
+      Transaction.exists({ bookId: book._id, status: { $in: ["pending", "approved", "overdue"] } }),
+      Reservation.exists({ bookId: book._id, status: { $in: ["pending", "waiting", "ready"] } }),
+    ]);
+
+    if (activeTransaction || activeReservation) {
+      return res.status(400).json({
+        message: "Book cannot be deleted while it has active loans, requests, or reservations",
+      });
+    }
+
+    await book.deleteOne();
+    res.json({ message: "Book deleted" });
+  } catch (err) {
+    res.status(400).json({ message: err.message });
+  }
 };
