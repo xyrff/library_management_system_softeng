@@ -17,10 +17,18 @@ def recommend(member_id):
 
 @app.route("/predict-late-return", methods=["POST"])
 def predict_late_return():
-    """Returns a late-return risk score given loan/member features."""
+    """Returns a late-return risk score and label given loan/member features."""
     features = request.get_json()
-    risk_score = predict_late_return_risk(features)
-    return jsonify({"riskScore": risk_score})
+    if not isinstance(features, dict):
+        return jsonify({"message": "A JSON object with loan features is required"}), 400
+
+    try:
+        prediction = predict_late_return_risk(features)
+    except (KeyError, TypeError, ValueError) as error:
+        return jsonify({"message": f"Invalid late-return features: {error}"}), 400
+
+    app.logger.info("Late-return features: %s", features)
+    return jsonify(prediction)
 
 
 @app.route("/", methods=["GET"])

@@ -1,23 +1,46 @@
-"""
-Late-return risk classification logic.
+"""Late-return risk prediction using the trained scikit-learn pipeline."""
 
-TODO (ML team):
-1. Prepare a (synthetic or real) transaction dataset with features:
-   memberType, lateReturnHistory, genre, loan duration, day of week borrowed.
-2. Label: returned_late (True/False), derived from returnDate vs. dueDate.
-3. Train a classifier (RandomForestClassifier or XGBClassifier).
-4. Save the trained model with joblib and load it here instead of the placeholder below.
-"""
+from pathlib import Path
 
-# import joblib
-# model = joblib.load("trained_late_return_model.pkl")
+import joblib
+import pandas as pd
 
 
-def predict_late_return_risk(features: dict) -> str:
-    # Placeholder implementation — replace with model.predict_proba(...) once trained.
-    # Expected features dict: memberType, lateReturnHistory, genre
-    if features.get("lateReturnHistory", 0) >= 3:
-        return "high"
-    elif features.get("lateReturnHistory", 0) >= 1:
-        return "medium"
-    return "low"
+MODEL_DIR = Path(__file__).resolve().parent
+MODEL = joblib.load(MODEL_DIR / "late_return_model.joblib")
+THRESHOLD = float(joblib.load(MODEL_DIR / "late_return_threshold.joblib"))
+FEATURE_COLUMNS = [
+    "genre",
+    "dayOfWeekBorrowed",
+    "lateReturnHistory",
+    "loanDurationDays",
+]
+
+
+def predict_late_return_risk(features: dict) -> dict:
+    """Return the late probability, display label, and tuned binary decision."""
+    genre = features.get("genre") or "Unknown"
+    row = {
+        "genre": str(genre),
+        "dayOfWeekBorrowed": int(features["dayOfWeekBorrowed"]),
+        "lateReturnHistory": int(features["lateReturnHistory"]),
+        "loanDurationDays": int(features["loanDurationDays"]),
+    }
+    input_frame = pd.DataFrame([row], columns=FEATURE_COLUMNS)
+
+    probabilities = MODEL.predict_proba(input_frame)[0]
+    positive_class_index = list(MODEL.classes_).index(1)
+    probability = float(probabilities[positive_class_index])
+
+    if probability < 0.35:
+        risk_label = "low"
+    elif probability <= 0.65:
+        risk_label = "medium"
+    else:
+        risk_label = "high"
+
+    return {
+        "riskScore": probability,
+        "riskLabel": risk_label,
+        "isLateRisk": probability >= THRESHOLD,
+    }

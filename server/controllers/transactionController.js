@@ -52,15 +52,21 @@ exports.borrowBook = async (req, res) => {
       status: "pending",
     });
 
-    // Call the ML service for a late-return risk score.
-    // TODO: replace with real feature values once member/book history logic is built.
+    const dayOfWeekBorrowed = (parsedBorrowDate.getDay() + 6) % 7;
+    const loanDurationDays = Math.round(
+      (parsedReturnDate.getTime() - parsedBorrowDate.getTime()) / (1000 * 60 * 60 * 24)
+    );
+
+    // Store the probability in the existing numeric risk-score field. The ML
+    // response also includes a display label for clients that need it.
     try {
       const member = await Member.findById(req.user.id);
       if (!member) throw new Error("Member not found");
       const { data } = await axios.post(`${process.env.ML_SERVICE_URL}/predict-late-return`, {
-        memberType: member.memberType,
-        lateReturnHistory: member.lateReturnHistory,
         genre: book.genre,
+        dayOfWeekBorrowed,
+        lateReturnHistory: member.lateReturnHistory,
+        loanDurationDays,
       });
       transaction.lateReturnRiskScore = data.riskScore;
       await transaction.save();

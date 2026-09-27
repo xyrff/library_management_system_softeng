@@ -9,14 +9,14 @@ import Modal from '../../components/ui/Modal';
 import styles from './RequestsPage.module.css';
 
 function riskLabel(score) {
-  if (score < 0.25) return 'Low Risk';
-  if (score < 0.6) return 'Medium Risk';
+  if (score < 0.35) return 'Low Risk';
+  if (score <= 0.65) return 'Medium Risk';
   return 'High Risk';
 }
 
 function riskVariant(score) {
-  if (score < 0.25) return 'success';
-  if (score < 0.6) return 'warning';
+  if (score < 0.35) return 'success';
+  if (score <= 0.65) return 'warning';
   return 'danger';
 }
 

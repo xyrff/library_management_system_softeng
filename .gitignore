@@ -18,6 +18,8 @@ ml-service/venv/
 ml-service/.venv/
 *.pkl
 *.joblib
+!ml-service/models/late_return_model.joblib
+!ml-service/models/late_return_threshold.joblib
 
 # OS/editor
 .DS_Store
