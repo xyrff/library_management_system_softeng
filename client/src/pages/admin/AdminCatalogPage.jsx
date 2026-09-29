@@ -15,6 +15,7 @@ const emptyForm = {
   title: '',
   author: '',
   isbn: '',
+  coverUrl: '',
   genre: '',
   description: '',
   totalCopies: '1',
@@ -33,6 +34,7 @@ function BookFormModal({ isOpen, onClose, book, onSaved }) {
         title: book.title || '',
         author: book.author || '',
         isbn: book.isbn || '',
+        coverUrl: book.coverUrl || '',
         genre: book.genre || '',
         description: book.description || '',
         totalCopies: String(book.totalCopies ?? 1),
@@ -70,6 +72,12 @@ function BookFormModal({ isOpen, onClose, book, onSaved }) {
               options={GENRES.map(g => ({ value:g, label:g }))} placeholder="Select genre" />
             <Input label="ISBN" placeholder="978-..." value={form.isbn} onChange={set('isbn')} required />
           </div>
+          <Input
+            label="Cover Image URL"
+            placeholder="Leave blank to auto-generate from ISBN"
+            value={form.coverUrl}
+            onChange={set('coverUrl')}
+          />
           <Input label="Description" placeholder="Book description" value={form.description} onChange={set('description')} />
           <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:14 }}>
             <Input label="Number of Copies" type="number" min={1} max={99} value={form.totalCopies} onChange={set('totalCopies')} required />

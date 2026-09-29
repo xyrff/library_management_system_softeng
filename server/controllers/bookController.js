@@ -2,6 +2,11 @@ const Book = require("../models/Book");
 const Transaction = require("../models/Transaction");
 const Reservation = require("../models/Reservation");
 
+const getCoverUrl = (coverUrl, isbn) => {
+  if (typeof coverUrl === "string" && coverUrl.trim()) return coverUrl;
+  return isbn ? `https://covers.openlibrary.org/b/isbn/${encodeURIComponent(isbn)}-L.jpg` : undefined;
+};
+
 exports.getBooks = async (req, res) => {
   // TODO: support search/filter query params (genre, author, availability)
   const books = await Book.find();
@@ -19,6 +24,7 @@ exports.createBook = async (req, res) => {
     const bookData = { ...req.body };
     delete bookData.availableCopies;
     bookData.availableCopies = bookData.totalCopies;
+    bookData.coverUrl = getCoverUrl(bookData.coverUrl, bookData.isbn);
 
     const book = await Book.create(bookData);
     res.status(201).json(book);
@@ -36,6 +42,10 @@ exports.updateBook = async (req, res) => {
     editableFields.forEach((field) => {
       if (req.body[field] !== undefined) book[field] = req.body[field];
     });
+
+    if (req.body.coverUrl !== undefined || req.body.isbn !== undefined) {
+      book.coverUrl = getCoverUrl(req.body.coverUrl, book.isbn);
+    }
 
     if (req.body.totalCopies !== undefined) {
       const currentlyBorrowed = book.totalCopies - book.availableCopies;

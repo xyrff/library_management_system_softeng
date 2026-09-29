@@ -2,6 +2,8 @@ const mongoose = require("mongoose");
 const Reservation = require("../models/Reservation");
 const Transaction = require("../models/Transaction");
 const Book = require("../models/Book");
+const Member = require("../models/Member");
+const { computeLateReturnRisk } = require("../services/lateReturnRisk");
 
 const CLAIM_WINDOW_MS = 2 * 24 * 60 * 60 * 1000;
 const getClaimExpiry = (readyAt) => new Date(readyAt.getTime() + CLAIM_WINDOW_MS);
@@ -54,6 +56,12 @@ const promoteNextReservation = async (bookId) => {
 };
 
 const expireReservation = async (reservation) => {
+  const activeReservationClaim = await Transaction.exists({
+    reservationId: reservation._id,
+    status: { $in: ["pending", "approved", "rejected"] },
+  });
+  if (activeReservationClaim) return null;
+
   const cutoff = new Date(Date.now() - CLAIM_WINDOW_MS);
   const expired = await Reservation.findOneAndUpdate(
     { _id: reservation._id, status: "ready", readyAt: { $lte: cutoff } },
@@ -152,7 +160,7 @@ exports.claimReservation = async (req, res) => {
     const reservationState = await Reservation.findOne({
       _id: req.params.id,
       memberId: req.user.id,
-    }).select("status readyAt");
+    }).select("status readyAt bookId memberId");
     if (!reservationState) return res.status(404).json({ message: "Reservation not found" });
     if (reservationState.status === "expired") {
       return res.status(400).json({ message: "Reservation has expired and can no longer be claimed" });
@@ -161,35 +169,53 @@ exports.claimReservation = async (req, res) => {
       return res.status(400).json({ message: "Reservation is not ready to be claimed" });
     }
 
-    const reservation = await Reservation.findOneAndUpdate(
-      {
-        _id: req.params.id,
-        memberId: req.user.id,
-        status: "ready",
-        readyAt: { $gt: new Date(Date.now() - CLAIM_WINDOW_MS) },
-      },
-      { $set: { status: "claimed" } },
-      { new: true }
+    if (
+      !reservationState.readyAt ||
+      reservationState.readyAt <= new Date(Date.now() - CLAIM_WINDOW_MS)
+    ) {
+      return res.status(400).json({ message: "Reservation is no longer available to claim" });
+    }
+
+    const [book, member] = await Promise.all([
+      Book.findById(reservationState.bookId),
+      Member.findById(reservationState.memberId),
+    ]);
+    if (!book || !member) {
+      return res.status(404).json({ message: "Book or member for this reservation was not found" });
+    }
+    const lateReturnRiskScore = await computeLateReturnRisk(
+      book, member, dates.parsedBorrowDate, dates.parsedReturnDate
     );
-    if (!reservation) return res.status(400).json({ message: "Reservation is no longer available to claim" });
 
     let transaction;
     try {
       transaction = await Transaction.create({
-        bookId: reservation.bookId, memberId: reservation.memberId,
-        activeRequestKey: `${reservation.bookId}:${reservation.memberId}`,
+        bookId: reservationState.bookId,
+        memberId: reservationState.memberId,
+        reservationId: reservationState._id,
+        activeRequestKey: `${reservationState.bookId}:${reservationState.memberId}`,
         borrowDate: dates.parsedBorrowDate,
         dueDate: dates.parsedReturnDate,
-        status: "approved",
+        lateReturnRiskScore,
+        status: "pending",
       });
+      const reservationStillReady = await Reservation.exists({
+        _id: reservationState._id,
+        memberId: req.user.id,
+        status: "ready",
+        readyAt: { $gt: new Date(Date.now() - CLAIM_WINDOW_MS) },
+      });
+      if (!reservationStillReady) {
+        await Transaction.deleteOne({ _id: transaction._id, status: "pending" });
+        return res.status(400).json({ message: "Reservation is no longer available to claim" });
+      }
     } catch (err) {
-      await Reservation.findOneAndUpdate(
-        { _id: reservation._id, status: "claimed" },
-        { $set: { status: "ready" } }
-      );
+      if (transaction) {
+        await Transaction.deleteOne({ _id: transaction._id, status: "pending" });
+      }
       throw err;
     }
-    res.status(201).json({ reservation, transaction });
+    res.status(201).json({ reservation: reservationState, transaction });
   } catch (err) {
     if (err.code === 11000) {
       return res.status(409).json({
@@ -209,6 +235,18 @@ exports.cancelReservation = async (req, res) => {
     if (!reservation) return res.status(404).json({ message: "Active reservation not found" });
 
     const wasReady = reservation.status === "ready";
+    if (wasReady) {
+      const activeClaim = await Transaction.exists({
+        reservationId: reservation._id,
+        status: { $in: ["pending", "approved", "rejected"] },
+      });
+      if (activeClaim) {
+        return res.status(409).json({
+          message: "A claim for this reservation is awaiting librarian approval",
+        });
+      }
+    }
+
     reservation.status = "cancelled";
     await reservation.save();
     if (wasReady) await promoteNextReservation(reservation.bookId);

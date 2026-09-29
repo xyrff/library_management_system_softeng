@@ -1,10 +1,11 @@
-const axios = require("axios");
 const mongoose = require("mongoose");
 const Transaction = require("../models/Transaction");
 const Book = require("../models/Book");
 const Member = require("../models/Member");
 const Fine = require("../models/Fine");
-const { holdNextReservation } = require("./reservationController");
+const Reservation = require("../models/Reservation");
+const { holdNextReservation, promoteNextReservation } = require("./reservationController");
+const { computeLateReturnRisk } = require("../services/lateReturnRisk");
 
 // POST /api/transactions/borrow
 exports.borrowBook = async (req, res) => {
@@ -52,23 +53,12 @@ exports.borrowBook = async (req, res) => {
       status: "pending",
     });
 
-    const dayOfWeekBorrowed = (parsedBorrowDate.getDay() + 6) % 7;
-    const loanDurationDays = Math.round(
-      (parsedReturnDate.getTime() - parsedBorrowDate.getTime()) / (1000 * 60 * 60 * 24)
-    );
-
-    // Store the probability in the existing numeric risk-score field. The ML
-    // response also includes a display label for clients that need it.
     try {
       const member = await Member.findById(req.user.id);
       if (!member) throw new Error("Member not found");
-      const { data } = await axios.post(`${process.env.ML_SERVICE_URL}/predict-late-return`, {
-        genre: book.genre,
-        dayOfWeekBorrowed,
-        lateReturnHistory: member.lateReturnHistory,
-        loanDurationDays,
-      });
-      transaction.lateReturnRiskScore = data.riskScore;
+      transaction.lateReturnRiskScore = await computeLateReturnRisk(
+        book, member, parsedBorrowDate, parsedReturnDate
+      );
       await transaction.save();
     } catch (mlErr) {
       console.error("ML service unavailable:", mlErr.message);
@@ -96,6 +86,24 @@ exports.approveRequest = async (req, res) => {
     );
     if (!transaction) {
       return res.status(404).json({ message: "Pending transaction not found" });
+    }
+
+    if (transaction.reservationId) {
+      const reservation = await Reservation.findOneAndUpdate(
+        { _id: transaction.reservationId, status: "ready" },
+        { $set: { status: "claimed" }, $unset: { claimExpiresAt: 1 } },
+        { new: true }
+      );
+      if (!reservation) {
+        await Transaction.findOneAndUpdate(
+          { _id: transaction._id, status: "approved" },
+          { $set: { status: "pending" } }
+        );
+        return res.status(409).json({
+          message: "This reservation is no longer available to claim",
+        });
+      }
+      return res.json(transaction);
     }
 
     const book = await Book.findOneAndUpdate(
@@ -129,6 +137,19 @@ exports.rejectRequest = async (req, res) => {
     );
     if (!transaction) {
       return res.status(404).json({ message: "Pending transaction not found" });
+    }
+    if (transaction.reservationId) {
+      const reservation = await Reservation.findOneAndUpdate(
+        { _id: transaction.reservationId, status: "ready" },
+        { $set: { status: "expired" }, $unset: { claimExpiresAt: 1 } },
+        { new: true }
+      );
+      if (!reservation) {
+        return res.status(409).json({
+          message: "The linked reservation is no longer available to reject",
+        });
+      }
+      await promoteNextReservation(reservation.bookId);
     }
     res.json(transaction);
   } catch (err) {

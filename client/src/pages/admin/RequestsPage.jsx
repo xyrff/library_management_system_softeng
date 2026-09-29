@@ -70,7 +70,7 @@ export default function RequestsPage() {
                     <div className={styles.avatar}>{req.memberId?.name?.[0] || '?'}</div>
                     <div><p className={styles.name}>{req.memberId?.name || 'Unknown member'}</p><p className={styles.email}>{req.memberId?.email || '—'}</p></div>
                   </div></td>
-                  <td><p className={styles.bookTitle}>{req.bookId?.title || 'Unknown book'}</p><p className={styles.bookAuthor}>{req.bookId?.author || '—'}</p></td>
+                  <td><p className={styles.bookTitle}>{req.bookId?.title || 'Unknown book'}</p><p className={styles.bookAuthor}>{req.bookId?.author || '—'}</p>{req.reservationId && <Badge label="From reservation" variant="info" />}</td>
                   <td className={styles.muted}>{formatDate(req.borrowDate)} – {formatDate(req.dueDate)}</td>
                   <td className={styles.muted}>{formatDate(req.createdAt || req.borrowDate)}</td>
                   <td><div className={styles.riskCell}>

@@ -4,6 +4,7 @@ const transactionSchema = new mongoose.Schema(
   {
     bookId: { type: mongoose.Schema.Types.ObjectId, ref: "Book", required: true },
     memberId: { type: mongoose.Schema.Types.ObjectId, ref: "Member", required: true },
+    reservationId: { type: mongoose.Schema.Types.ObjectId, ref: "Reservation", default: null },
     borrowDate: { type: Date, required: true, default: Date.now },
     dueDate: { type: Date, required: true },
     returnDate: { type: Date, default: null },

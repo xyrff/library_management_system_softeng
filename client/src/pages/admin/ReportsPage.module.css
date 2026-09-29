@@ -1,4 +1,8 @@
 .page { padding: 36px 40px; }
+.message, .empty { color: var(--color-text-secondary); }
+.message { margin-top: 24px; }
+.empty { padding: 32px 0; text-align: center; font-size: 14px; }
+.emptyRow { color: var(--color-text-secondary); text-align: center; padding: 32px 18px !important; }
 
 .charts {
   display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 24px;

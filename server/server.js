@@ -15,6 +15,7 @@ app.use("/api/auth", require("./routes/authRoutes"));
 app.use("/api/books", require("./routes/bookRoutes"));
 app.use("/api/members", require("./routes/memberRoutes"));
 app.use("/api/transactions", require("./routes/transactionRoutes"));
+app.use("/api/fines", require("./routes/fineRoutes"));
 app.use("/api/reservations", require("./routes/reservationRoutes"));
 app.use("/api/recommendations", require("./routes/recommendationRoutes"));
 

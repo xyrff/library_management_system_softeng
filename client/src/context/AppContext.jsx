@@ -6,6 +6,7 @@ const AppContext = createContext(null);
 export function AppProvider({ children }) {
   const [currentUser, setCurrentUser] = useState(null);
   const [isInitializing, setIsInitializing] = useState(true);
+  const [fineNotification, setFineNotification] = useState(null);
 
   useEffect(() => {
     const restoreSession = async () => {
@@ -35,8 +36,33 @@ export function AppProvider({ children }) {
     restoreSession();
   }, []);
 
+  useEffect(() => {
+    if (!currentUser || currentUser.role !== 'member') {
+      setFineNotification(null);
+      return undefined;
+    }
+
+    let isCurrentSession = true;
+    api.get('/fines/my')
+      .then(({ data }) => {
+        if (isCurrentSession && data.length > 0) {
+          setFineNotification(data);
+        }
+      })
+      .catch((error) => {
+        if (isCurrentSession) {
+          console.error('Could not load your outstanding fines:', error);
+        }
+      });
+
+    return () => {
+      isCurrentSession = false;
+    };
+  }, [currentUser]);
+
   const login = ({ token, email, role, name }) => {
     if (token) localStorage.setItem('token', token);
+    setFineNotification(null);
     setCurrentUser({
       email,
       name: name || email.split('@')[0],
@@ -46,11 +72,19 @@ export function AppProvider({ children }) {
 
   const logout = () => {
     localStorage.removeItem('token');
+    setFineNotification(null);
     setCurrentUser(null);
   };
 
   return (
-    <AppContext.Provider value={{ currentUser, isInitializing, login, logout }}>
+    <AppContext.Provider value={{
+      currentUser,
+      fineNotification,
+      dismissFineNotification: () => setFineNotification(null),
+      isInitializing,
+      login,
+      logout,
+    }}>
       {children}
     </AppContext.Provider>
   );
