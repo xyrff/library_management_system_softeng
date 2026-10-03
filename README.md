@@ -1,4 +1,6 @@
-# Library Management System
+# SmartLib
+
+Library Management System
 
 A full-stack Library Management System (MERN) with two integrated machine learning features:
 - **Book Recommendation Engine** — content-based recommendations per member

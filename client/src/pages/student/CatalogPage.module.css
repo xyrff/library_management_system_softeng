@@ -28,7 +28,7 @@
   padding: 40px 0;
   text-align: center;
   color: var(--color-text-secondary);
-  font-size: 14px;
+  font: var(--text-body);
 }
 
 .grid {
@@ -74,8 +74,8 @@
 }
 
 .genreTag {
-  font-size: 10px;
-  font-weight: 700;
+  font: var(--text-caption);
+  font-weight: 500;
   text-transform: uppercase;
   letter-spacing: .05em;
   color: var(--color-primary);
@@ -83,11 +83,9 @@
 }
 
 .title {
-  font-size: 14px;
-  font-weight: 700;
+  font: var(--text-subheading);
   color: var(--color-text);
   cursor: pointer;
-  line-height: 1.35;
   margin: 0;
 }
 
@@ -96,7 +94,7 @@
 }
 
 .author {
-  font-size: 12px;
+  font: var(--text-caption);
   color: var(--color-text-secondary);
   margin: 0;
 }
@@ -128,7 +126,7 @@
 
 .pageSummary {
   color: var(--color-text-secondary);
-  font-size: 13px;
+  font: var(--text-caption);
 }
 
 .pageControls {

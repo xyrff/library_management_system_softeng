@@ -7,6 +7,10 @@ const Reservation = require("../models/Reservation");
 const { holdNextReservation, promoteNextReservation } = require("./reservationController");
 const { computeLateReturnRisk } = require("../services/lateReturnRisk");
 
+const RATE_PER_DAY = 5;
+const MAX_FINE = 150;
+const MILLISECONDS_PER_DAY = 24 * 60 * 60 * 1000;
+
 // POST /api/transactions/borrow
 exports.borrowBook = async (req, res) => {
   try {
@@ -211,10 +215,12 @@ exports.returnBook = async (req, res) => {
     const wasLate = returnDate > transaction.dueDate;
 
     if (wasLate) {
+      const daysLate = Math.ceil((returnDate - transaction.dueDate) / MILLISECONDS_PER_DAY);
+      const amount = Math.min(daysLate * RATE_PER_DAY, MAX_FINE);
       await Fine.create({
         transactionId: transaction._id,
         memberId: transaction.memberId,
-        amount: 0, // TODO: calculate based on days late / fine policy
+        amount,
       });
       await Member.findByIdAndUpdate(transaction.memberId, { $inc: { lateReturnHistory: 1 } });
     }

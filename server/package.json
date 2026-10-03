@@ -1,7 +1,7 @@
 {
-  "name": "library-management-server",
+  "name": "smartlib-server",
   "version": "1.0.0",
-  "description": "Express/MongoDB backend for the Library Management System",
+  "description": "Express/MongoDB API for SmartLib",
   "main": "server.js",
   "type": "commonjs",
   "scripts": {

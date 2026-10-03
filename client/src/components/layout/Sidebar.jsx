@@ -1,6 +1,7 @@
 import { NavLink } from 'react-router-dom';
 import { BookOpen, LayoutDashboard, List, BookMarked, BarChart2, LogOut, Library, ClipboardList } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
+import { APP_NAME, APP_SUBTITLE } from '../../constants/branding';
 import styles from './Sidebar.module.css';
 
 const studentLinks = [
@@ -25,8 +26,8 @@ export default function Sidebar() {
       <div className={styles.brand}>
         <div className={styles.brandIcon}><Library size={22} /></div>
         <div>
-          <p className={styles.brandName}>Greenfield Library</p>
-          <p className={styles.brandSub}>School Library System</p>
+          <p className={styles.brandName}>{APP_NAME}</p>
+          <p className={styles.brandSub}>{APP_SUBTITLE}</p>
         </div>
       </div>
 

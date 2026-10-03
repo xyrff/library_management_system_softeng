@@ -1,5 +1,5 @@
 .page { padding: 36px 40px; }
-.status { color: var(--color-text-secondary); margin-top: 24px; }
+.status { color: var(--color-text-secondary); font: var(--text-body); margin-top: 24px; }
 
 .tableWrap {
   background: var(--color-surface); border-radius: var(--radius-lg);
@@ -8,12 +8,12 @@
 .table { width: 100%; border-collapse: collapse; }
 .table th {
   text-align: left; padding: 13px 18px;
-  font-size: 11px; font-weight: 700; text-transform: uppercase;
-  letter-spacing:.05em; color: var(--color-text-muted);
+  font: var(--text-caption); font-weight: 500; text-transform: uppercase;
+  letter-spacing:.05em; color: var(--color-text-secondary);
   background: var(--color-surface-2); border-bottom: 1px solid var(--color-border-light);
 }
 .table td {
-  padding: 14px 18px; font-size: 14px;
+  padding: 14px 18px; font: var(--text-body);
   border-bottom: 1px solid var(--color-border-light); vertical-align: middle;
 }
 .table tr:last-child td { border-bottom: none; }
@@ -24,16 +24,16 @@
   width: 36px; height: 36px; border-radius: 50%;
   background: var(--color-primary); color: #fff;
   display: flex; align-items: center; justify-content: center;
-  font-weight: 700; font-size: 14px; flex-shrink: 0;
+  font-weight: 600; font-size: 14px; flex-shrink: 0;
 }
-.name  { font-size: 14px; font-weight: 600; }
-.email { font-size: 12px; color: var(--color-text-muted); }
+.name  { font: var(--text-body); }
+.email { font: var(--text-caption); color: var(--color-text-secondary); }
 
-.bookTitle  { font-size: 14px; font-weight: 600; }
-.bookAuthor { font-size: 12px; color: var(--color-text-muted); }
+.bookTitle  { font: var(--text-subheading); }
+.bookAuthor { font: var(--text-caption); color: var(--color-text-secondary); }
 .muted { color: var(--color-text-secondary); }
 
 .riskCell { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
-.riskPct  { font-size: 12px; color: var(--color-text-muted); }
+.riskPct  { font: var(--text-caption); color: var(--color-text-secondary); }
 
 .actBtns { display: flex; gap: 8px; }

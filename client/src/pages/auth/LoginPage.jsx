@@ -5,6 +5,7 @@ import { useApp } from '../../context/AppContext';
 import api from '../../services/api';
 import Input from '../../components/ui/Input';
 import Button from '../../components/ui/Button';
+import { APP_NAME, APP_SUBTITLE } from '../../constants/branding';
 import styles from './AuthPage.module.css';
 
 export default function LoginPage() {
@@ -40,8 +41,8 @@ export default function LoginPage() {
         {/* Branding */}
         <div className={styles.brand}>
           <div className={styles.brandIcon}><Library size={28} /></div>
-          <h1 className={styles.brandName}>Greenfield Library</h1>
-          <p className={styles.brandTagline}>School Library Management System</p>
+          <h1 className={styles.brandName}>{APP_NAME}</h1>
+          <p className={styles.brandTagline}>{APP_SUBTITLE}</p>
         </div>
 
         <h2 className={styles.heading}>Welcome back</h2>

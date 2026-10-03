@@ -20,7 +20,7 @@ app.use("/api/reservations", require("./routes/reservationRoutes"));
 app.use("/api/recommendations", require("./routes/recommendationRoutes"));
 
 app.get("/", (req, res) => {
-  res.send("Library Management System API is running.");
+  res.send("SmartLib API is running.");
 });
 
 const PORT = process.env.PORT || 5000;
