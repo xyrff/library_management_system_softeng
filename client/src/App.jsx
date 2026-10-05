@@ -1,6 +1,7 @@
 import { Navigate, Route, Routes } from "react-router-dom";
 import { AppProvider, useApp } from "./context/AppContext";
 import AppLayout from "./components/layout/AppLayout";
+import HomePage from "./pages/public/HomePage";
 import LoginPage from "./pages/auth/LoginPage";
 import RegisterPage from "./pages/auth/RegisterPage";
 import CatalogPage from "./pages/student/CatalogPage";
@@ -18,7 +19,7 @@ function ProtectedRoute({ children, requiredRole }) {
   const { currentUser, isInitializing } = useApp();
 
   if (isInitializing) return null;
-  if (!currentUser) return <Navigate to="/" replace />;
+  if (!currentUser) return <Navigate to="/login" replace />;
   if (requiredRole && currentUser.role !== requiredRole) {
     return <Navigate to="/" replace />;
   }
@@ -47,6 +48,14 @@ function AppRoutes() {
     <Routes>
       <Route
         path="/"
+        element={
+          <AuthRedirect>
+            <HomePage />
+          </AuthRedirect>
+        }
+      />
+      <Route
+        path="/login"
         element={
           <AuthRedirect>
             <LoginPage />

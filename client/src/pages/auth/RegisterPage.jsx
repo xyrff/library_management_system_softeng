@@ -40,7 +40,7 @@ export default function RegisterPage() {
         memberType: 'student',
       });
       setDone(true);
-      setTimeout(() => navigate('/'), 2000);
+      setTimeout(() => navigate('/login'), 2000);
     } catch (requestError) {
       setErrors({
         form: requestError.response?.data?.message ||
@@ -96,7 +96,7 @@ export default function RegisterPage() {
 
         <p className={styles.footer}>
           Already have an account?{' '}
-          <Link to="/" className={styles.link}>Sign in</Link>
+          <Link to="/login" className={styles.link}>Sign in</Link>
         </p>
       </div>
     </div>
